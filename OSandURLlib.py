@@ -98,3 +98,12 @@ def toCSVfile(datas, path):
 
 
 toCSVfile(loans2, './data/loans2.csv')
+
+#pandas dataframe
+import pandas as pd
+
+print(pd.read_csv('./data/loans2.csv'))
+
+#second method of csv.
+
+pd.DataFrame(loans2).to_csv('./data/loans2COPY.csv', index = None)
