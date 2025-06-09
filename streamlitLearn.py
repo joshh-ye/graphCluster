@@ -16,7 +16,7 @@ with tab1:
         chart = st.line_chart(coord)
 
         with st.spinner("please wait...", show_time=True):
-            progressbar = st.sidebar.progress(0)
+            progressbar = st.progress(0)
             for i in range(1, 30):
                 new_coord = coord[-1] + np.random.rand(1, 1) * 2 - 1
                 chart.add_rows(new_coord)
