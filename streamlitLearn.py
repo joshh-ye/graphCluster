@@ -9,7 +9,7 @@ st.title("Graphing tools")
 tab1, tab2 = st.tabs(["Random graph generator", "CSV to graph converter"])
 
 with tab1:
-    st.title("random graph generator")
+    st.subheader("random graph generator")
 
     if st.button("Start"):
         coord = np.random.rand(1, 1)
@@ -29,7 +29,7 @@ with tab1:
 
 
 with tab2:
-    st.title("CSV to graph converter")
+    st.subheader("CSV to graph converter")
 
     file = st.file_uploader("choose CSV file", type="csv")
 
