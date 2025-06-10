@@ -1,7 +1,6 @@
 import streamlit as st
 import numpy as np
 import time
-import streamlit as st
 import pandas as pd
 
 st.title("Graphing tools")

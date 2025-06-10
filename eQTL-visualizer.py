@@ -1,23 +1,65 @@
 import streamlit as st
-import requests
 import pandas as pd
+import requests
+import numpy as np
+import plotly.express as px
 
-urlDataset = 'https://www.ebi.ac.uk/eqtl/api/v2/datasets'
-r = requests.get(urlDataset)
-datasets = r.json()
 
-final = pd.DataFrame(datasets)
+st.title("eQTL Browser (QTD000001)")
 
-st.write(final)
+# Sidebar: Input options
+st.sidebar.header("Query Options")
+gene_id = st.sidebar.text_input("Enter Ensembl Gene ID", value="ENSG00000215014")  # Example: BRCA2
+pval_thresh = st.sidebar.slider("P-value threshold", 0.0, 1.0, 0.05, 0.001)
 
-urlData = 'https://www.ebi.ac.uk/eqtl/api/v2/datasets/QTD000001/associations'
-r = requests.get(urlData)
-eQTL_Data = r.json()
-final2 = pd.DataFrame(eQTL_Data)
 
-st.write(final2)
+# Query eQTL API
+def fetch_eqtl_data(gene_id):
+    url = f"https://www.ebi.ac.uk/eqtl/api/v2/datasets/QTD000001/associations"
+    r = requests.get(url)
+    if r.status_code != 200:
+        st.error(f"Failed to retrieve data: {r.status_code}")
+        return pd.DataFrame()
 
-urlData = 'https://www.ebi.ac.uk/eqtl/api/v2/datasets/QTD000001'
-r = requests.get(urlData)
-eQTL_Data = r.json()
-final2 = pd.DataFrame(eQTL_Data)
+    data = r.json()
+    df = pd.DataFrame(data)
+    return df[df['gene_id'] == 'ENSG00000215014']
+
+
+# Load and filter data
+df = fetch_eqtl_data(gene_id)
+st.write(df)
+
+if df.empty:
+    st.warning("No data found for the given gene ID.")
+else:
+    df['-log10_p'] = -np.log10(df['pvalue'])
+    df_filtered = df[df['pvalue'] <= pval_thresh]
+
+    st.subheader("Top eQTL Associations")
+    st.dataframe(df_filtered[['variant', 'beta', 'pvalue', '-log10_p', 'r2', 'maf']].sort_values('pvalue').head(20))
+
+    st.subheader("Volcano Plot")
+    fig = px.scatter(
+        df_filtered,
+        x='beta',
+        y='-log10_p',
+        hover_data=['variant'],
+        title=f"Volcano Plot for {gene_id}",
+        labels={"beta": "Effect Size (β)", "-log10_p": "-log10(p-value)"},
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.subheader("Manhattan-style Plot")
+    df_filtered['chr'], df_filtered['pos'] = df_filtered['variant'].str.split('_').str[0], \
+    df_filtered['variant'].str.split('_').str[1].astype(int)
+    fig2 = px.scatter(
+        df_filtered,
+        x='pos',
+        y='-log10_p',
+        color='chr',
+        hover_data=['variant'],
+        title=f"SNP Significance by Genomic Position",
+        labels={"pos": "Position", "-log10_p": "-log10(p-value)"},
+    )
+    st.plotly_chart(fig2, use_container_width=True)
