@@ -2,19 +2,14 @@ import streamlit as st
 import numpy as np
 import time
 import pandas as pd
+import requests
+import plotly.express as px
 
 st.title("Graphing tools")
 
 tab1, tab2, tab3 = st.tabs(["eQTL visualizer", "Random graph generator", "CSV to graph converter"])
 
 with tab1:
-    import streamlit as st
-    import pandas as pd
-    import requests
-    import numpy as np
-    import plotly.express as px
-    from requests.exceptions import MissingSchema, InvalidURL
-
     st.title("eQTL Browser")
 
     # choosing data from list of datasets
@@ -102,11 +97,10 @@ with tab2:
                 chart.add_rows(new_coord)
                 coord = new_coord
 
-                progressbar.progress(i/30)
+                progressbar.progress(i / 30)
                 time.sleep(0.1)
 
         progressbar.empty()
-
 
 with tab3:
     st.subheader("CSV to graph converter")
