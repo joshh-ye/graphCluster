@@ -4,10 +4,12 @@ import time
 import pandas as pd
 import requests
 import plotly.express as px
+import streamlit.components.v1 as components
 
 st.title("Graphing tools")
 
-tab1, tab2, tab3 = st.tabs(["eQTL visualizer", "Random graph generator", "CSV to graph converter"])
+tab1, tab2, tab3, tab4 = st.tabs(
+    ["eQTL visualizer", "eQTL browser", "Random graph generator", "CSV to graph converter"])
 
 with tab1:
     st.title("eQTL Browser")
@@ -84,6 +86,14 @@ with tab1:
             st.plotly_chart(fig2, use_container_width=True)
 
 with tab2:
+    components.iframe(
+        "https://shiny.odap-ico.org/clx/eQTL/",
+        width=800,
+        height=600,
+        scrolling=True
+    )
+
+with tab3:
     st.subheader("random graph generator")
 
     if st.button("Start"):
@@ -102,7 +112,7 @@ with tab2:
 
         progressbar.empty()
 
-with tab3:
+with tab4:
     st.subheader("CSV to graph converter")
 
     file = st.file_uploader("choose CSV file", type="csv")
