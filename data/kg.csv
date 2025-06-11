@@ -1,0 +1,6 @@
+x_id,x_name,x_type,y_id,y_name,y_type,relation
+DB0001,Lepirudin,Drug,AE001,Bleeding,Adverse Event,causes
+DB0002,Warfarin,Drug,AE002,Hemorrhage,Adverse Event,associated_with
+DB0003,Metformin,Drug,AE003,Diarrhea,Adverse Event,induces
+DB0004,Ibuprofen,Drug,AE004,Renal Impairment,Adverse Event,may_cause
+DB0005,Atorvastatin,Drug,AE005,Myopathy,Adverse Event,can_lead_to

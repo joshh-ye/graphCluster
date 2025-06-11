@@ -33,15 +33,21 @@ def draw_graph(G):
     net = Network(height="750px", width="100%", directed=True)
     for node, data in G.nodes(data=True):
         net.add_node(node, label=data.get("label", node))
-
     for u, v, data in G.edges(data=True):
         net.add_edge(u, v, label=data.get("label", ""))
 
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".html") as tmp:
-        net.save_graph(tmp.name)
-        with open(tmp.name, "r") as f:
-            html_content = f.read()
-        os.unlink(tmp.name)
+    # Create a temp file and immediately close it so it's not locked
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".html")
+    tmp_path = tmp.name
+    tmp.close()
+
+    # Let PyVis write to it
+    net.save_graph(tmp_path)
+
+    # Read, delete, and render
+    with open(tmp_path, "r", encoding="utf-8") as f:
+        html_content = f.read()
+    os.unlink(tmp_path)
 
     st.components.v1.html(html_content, height=800, scrolling=True)
 
