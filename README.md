@@ -1,5 +1,5 @@
 ## Practice
-familiarizing using streamlit and its corresponding UI and graphing abilities.
+Cluster of graphs. Familiarizing using streamlit and its corresponding UI and graphing abilities.
 
 Website accessed here: [click here](https://randomgraphgenerator-efxf7wjtfehekm9vqxulma.streamlit.app/)
 
