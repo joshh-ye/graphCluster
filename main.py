@@ -12,10 +12,13 @@ import os
 
 st.title("Graphing tools")
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs(
-    ["Drug knowledge graph", "eQTL visualizer", "eQTL browser", "Random graph generator", "CSV to graph converter"])
+# tab1, tab2, tab3, tab4, tab5 = st.tabs(
+#     ["Drug knowledge graph", "eQTL visualizer", "eQTL browser", "Random graph generator", "CSV to graph converter"])
 
-with tab1:
+tab1, tab2, tab3, tab4 = st.tabs(
+    ["eQTL browser", "Drug knowledge graph", "Random graph generator", "CSV to graph converter"])
+
+with tab2:
     @st.cache_data
     def load_graph():
         df = pd.read_csv("data/kg.csv", low_memory=False)
@@ -69,7 +72,7 @@ with tab1:
     G = load_graph()
     draw_graph(G)
 
-with tab2:
+with tab1:
     st.title("eQTL Browser")
 
     # choosing data from list of datasets
@@ -111,6 +114,15 @@ with tab2:
         if df.empty:
             st.warning("No data found for the given gene ID.")
         else:
+
+            start, end = st.sidebar.slider(
+                label="choose range",
+                min_value=-1000,
+                max_value=1000,
+                value=(-100, 100),
+                step=1,
+            )
+
             df['-log10_p'] = -np.log10(df['pvalue'])
             df_filtered = df[df['pvalue'] <= pval_thresh]
 
@@ -118,40 +130,52 @@ with tab2:
             st.dataframe(
                 df_filtered[['variant', 'beta', 'pvalue', '-log10_p', 'r2', 'maf']].sort_values('pvalue').head(20))
 
-            st.subheader("Volcano Plot")
-            fig = px.scatter(
-                df_filtered,
-                x='beta',
-                y='-log10_p',
-                hover_data=['variant'],
-                title=f"Volcano Plot for {gene_id}",
-                labels={"beta": "Effect Size (β)", "-log10_p": "-log10(p-value)"},
-            )
-            st.plotly_chart(fig, use_container_width=True)
+            plotV = st.checkbox("PLot graphs")
 
-            st.subheader("Manhattan-style Plot")
-            df_filtered['chr'], df_filtered['pos'] = df_filtered['variant'].str.split('_').str[0], \
-                df_filtered['variant'].str.split('_').str[1].astype(int)
-            fig2 = px.scatter(
-                df_filtered,
-                x='pos',
-                y='-log10_p',
-                color='chr',
-                hover_data=['variant'],
-                title=f"SNP Significance by Genomic Position",
-                labels={"pos": "Position", "-log10_p": "-log10(p-value)"},
-            )
-            st.plotly_chart(fig2, use_container_width=True)
+            if plotV:
+                st.subheader("Volcano Plot")
+                fig = px.scatter(
+                    df_filtered,
+                    x='beta',
+                    y='-log10_p',
+                    hover_data=['variant'],
+                    title=f"Volcano Plot for {gene_id}",
+                    labels={"beta": "Effect Size (β)", "-log10_p": "-log10(p-value)"},
+                )
+                st.plotly_chart(fig, use_container_width=True)
+
+            plotLD = st.checkbox("PLot LD graph")
+
+            if plotLD:
+                # sidebar for LD plot
+                median_value = df_filtered['variant'].str.split('_').str[1].astype(int).median()
+
+                st.subheader("LD plot")
+                df_filtered['chr'], df_filtered['pos'] = df_filtered['variant'].str.split('_').str[0], \
+                    df_filtered['variant'].str.split('_').str[1].astype(int)
+
+                fig2 = px.scatter(
+                    df_filtered,
+                    x='pos',
+                    y='r2',
+                    color='chr',
+                    hover_data=['variant'],
+                    title=f"SNP Significance by Genomic Position",
+                    labels={"pos": "Position", "r2": "r^2"},
+                    range_x=(median_value + start, median_value + end)
+
+                )
+                st.plotly_chart(fig2, use_container_width=True)
+
+# with tab3:
+#     components.iframe(
+#         "https://shiny.odap-ico.org/clx/eQTL/",
+#         width=800,
+#         height=600,
+#         scrolling=True
+#     )
 
 with tab3:
-    components.iframe(
-        "https://shiny.odap-ico.org/clx/eQTL/",
-        width=800,
-        height=600,
-        scrolling=True
-    )
-
-with tab4:
     st.subheader("random graph generator")
 
     if st.button("Start"):
@@ -170,7 +194,7 @@ with tab4:
 
         progressbar.empty()
 
-with tab5:
+with tab4:
     st.subheader("CSV to graph converter")
 
     file = st.file_uploader("choose CSV file", type="csv")
