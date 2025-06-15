@@ -1,4 +1,4 @@
-## Practice
+## eQTL browser
 Cluster of graphs. Familiarizing using streamlit and its corresponding UI and graphing abilities.
 
 Website accessed here: [click here](https://graphcluster-kq4mrlgvzh89khrdvg9vbw.streamlit.app/)
