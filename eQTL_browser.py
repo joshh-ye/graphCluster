@@ -2,8 +2,9 @@ import pandas as pd
 import plotly.express as px
 import requests
 import streamlit as st
+
 st.title("eQTL Browser")
-st.sidebar.title("Query Parameters")
+st.sidebar.title("Query Parameters (for eQTL browser")
 
 # Sidebar: Input options
 entry_limit = st.sidebar.slider("Choose number of entries for table", 0, 1000, 500)
@@ -14,14 +15,25 @@ query_params = {
     "size": entry_limit,
 }
 
-search_option = st.sidebar.selectbox("Which search method would you like to use?", ("gene_id", "RSID", "gene name"), ) #gene name is upcoming feature
-if search_option == "RSID":
+search_option = st.sidebar.selectbox("Which search method would you like to use?",
+                                     ("gene_id", "RSID", "gene name"), )
+
+if search_option == "gene_id":
+    gene_id = st.sidebar.text_input("Enter Ensembl Gene ID", value="ENSG00000188157")
+    query_params["gene_id"] = gene_id
+elif search_option == "RSID":
     rsid = st.sidebar.text_input("Enter RSID", value="rs200141179")
     query_params["rsid"] = rsid
 else:
-    gene_id = st.sidebar.text_input("Enter Ensembl Gene ID", value="ENSG00000188157")
-    query_params["gene_id"] = gene_id
-
+    try:
+        gene_name = st.sidebar.text_input("Enter gene name (all CAPS)", value="AGRN")
+        response = requests.get(
+            f'https://rest.ensembl.org/xrefs/symbol/homo_sapiens/{gene_name}?content-type=application/json')
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        st.error(f"HTTP error {response.status_code}: {response.text}")
+    studies = response.json()
+    query_params["gene_id"] = studies[0]["id"]
 
 
 @st.cache_data
@@ -49,12 +61,11 @@ try:
     with st.spinner("Loading data", show_time=True):
         api_response = fetch_data(query_params)
 
-
     st.title("All data")
     df = pd.DataFrame(api_response)
     st.write(df)
 
-    #p_value filter
+    # p_value filter
     st.title("Filtered p-value data")
     association_df = df[df['pvalue'] <= pval_thresh]
     st.write(association_df)

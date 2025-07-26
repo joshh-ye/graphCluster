@@ -1,7 +1,5 @@
 import os
 import tempfile
-import time
-
 import networkx as nx
 import pandas as pd
 import plotly.express as px
@@ -10,20 +8,23 @@ import streamlit as st
 import streamlit.components.v1 as components
 from pyvis.network import Network
 
-# tab1, tab2, tab3, tab4 = st.tabs(
-#     ["eQTL browser", "Drug knowledge graph", "Random graph generator", "CSV to graph converter"])
-
-tab1, tab2 = st.tabs(
-    ["eQTL browser", "Drug knowledge graph"])
+tab1, tab2, tab3 = st.tabs(
+    ["GWAS search", "eQTL browser", "Drug knowledge graph"])
 
 with tab1:
-    import pandas as pd
-    import plotly.express as px
-    import requests
-    import streamlit as st
+    st.title('GWAS search')
+    search_term = st.text_input('Enter gene name or PMID ')
+    data = pd.read_csv('CRC risk genelists.csv')
 
+    if search_term:  # Only filter if a search term is provided
+        filtered_df = data[data['Genes'].str.contains(search_term, case=False)]
+        st.write(filtered_df)
+    else:
+        st.write(data)
+
+with tab2:
     st.title("eQTL Browser")
-    st.sidebar.title("Query Parameters")
+    st.sidebar.title("Query Parameters (for eQTL browser")
 
     # Sidebar: Input options
     entry_limit = st.sidebar.slider("Choose number of entries for table", 0, 1000, 500)
@@ -35,13 +36,24 @@ with tab1:
     }
 
     search_option = st.sidebar.selectbox("Which search method would you like to use?",
-                                         ("gene_id", "RSID", "gene name"), )  # gene name is upcoming feature
-    if search_option == "RSID":
+                                         ("gene_id", "RSID", "gene name"), )
+
+    if search_option == "gene_id":
+        gene_id = st.sidebar.text_input("Enter Ensembl Gene ID", value="ENSG00000188157")
+        query_params["gene_id"] = gene_id
+    elif search_option == "RSID":
         rsid = st.sidebar.text_input("Enter RSID", value="rs200141179")
         query_params["rsid"] = rsid
     else:
-        gene_id = st.sidebar.text_input("Enter Ensembl Gene ID", value="ENSG00000188157")
-        query_params["gene_id"] = gene_id
+        try:
+            gene_name = st.sidebar.text_input("Enter gene name (all CAPS)", value="AGRN")
+            response = requests.get(
+                f'https://rest.ensembl.org/xrefs/symbol/homo_sapiens/{gene_name}?content-type=application/json')
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            st.error(f"HTTP error {response.status_code}: {response.text}")
+        studies = response.json()
+        query_params["gene_id"] = studies[0]["id"]
 
 
     @st.cache_data
@@ -112,7 +124,7 @@ with tab1:
     except ValueError:
         st.error("Response is not valid JSON.")
 
-with tab2:
+with tab3:
     @st.cache_data
     def load_graph():
         df = pd.read_csv("data/kg.csv", low_memory=False)
@@ -165,51 +177,3 @@ with tab2:
     st.title("Drug ADE Knowledge Graph")
     G = load_graph()
     draw_graph(G)
-
-# with tab3:
-#     st.subheader("random graph generator")
-#
-#     if st.button("Start"):
-#         coord = np.random.rand(1, 1)
-#         chart = st.line_chart(coord)
-#
-#         with st.spinner("please wait...", show_time=True):
-#             progressbar = st.progress(0)
-#             for i in range(1, 30):
-#                 new_coord = coord[-1] + np.random.rand(1, 1) * 2 - 1
-#                 chart.add_rows(new_coord)
-#                 coord = new_coord
-#
-#                 progressbar.progress(i / 30)
-#                 time.sleep(0.1)
-#
-#         progressbar.empty()
-#
-# with tab4:
-#     st.subheader("CSV to graph converter")
-#
-#     file = st.file_uploader("choose CSV file", type="csv")
-#
-#     if file is not None:
-#         df = pd.read_csv(file)
-#
-#         st.subheader("Data preview")
-#         st.write(df.head())
-#
-#         st.write(df.describe())
-#
-#         st.subheader("filter data")
-#         filteredColumns = st.selectbox("Choose column to filter", ['--choose column--'] + list(df.columns))
-#
-#         if filteredColumns != '--choose column--':
-#             unique = df[filteredColumns].unique()
-#
-#             value = st.selectbox("Choose value from filtered column", unique)
-#             final = df[df[filteredColumns] == value]
-#             st.write(final)
-#
-#             x_value = st.selectbox("choose x values", df.columns)
-#             y_value = st.selectbox("choose y values", df.columns)
-#
-#             if st.button("Generate plot"):
-#                 st.line_chart(final.set_index(x_value)[y_value])
